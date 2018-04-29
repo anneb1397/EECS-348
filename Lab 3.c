@@ -1,4 +1,7 @@
 
+int MIN_INFINITY = -999999;
+int MAX_INFINITY = 999999;
+
 bool checkComplete(int *board) {
 	for (int i = 0; i < 9; i++)
 	{
@@ -8,6 +11,7 @@ bool checkComplete(int *board) {
 	return true;
 }
 
+//Need to change status for game for either end result or minmax purposes
 int statusSwap(int status) {
 	if (status == X)
 		status = 1;
@@ -21,38 +25,68 @@ int statusSwap(int status) {
 	return status;
 }
 
-int minmax(int  *board, int turn) {
+bool doPrune(bool prune, int alpha, int beta) {
+	if (!prune)
+		return true;
+
+	if (alpha <= beta)
+		return true;
+	else
+		return false;
+}
+
+//Minmax with option to prune using alpha-beta pruning
+int minmax_prune_opt(int *board, int turn, bool prune, int alpha, int beta) {
 	int status = game_status(board);
 	int value, optimal;
 
+	//Check for terminal nodes
 	if (status == X || status == O || checkComplete(board))
 		return statusSwap(status);
 
 	//Maximizer
 	if (turn == X) {
-		optimal = -999999;
-		for (int i = 0; i < 9; i++) {
+		optimal = MIN_INFINITY;
+		for (int i = 0; i < 9 && doPrune(prune, alpha, beta); i++) {
 			if (board[i] == NONE)
 			{
 				board[i] = X;
-				value = minmax(board, O);
+				value = minmax_prune_opt(board, O, prune, alpha, beta);
 				if (value >= optimal)
 					optimal = value;
 				board[i] = NONE;
+
+				if (prune)
+				{
+					//Prune solution space
+					if (optimal > alpha)
+						alpha = optimal;
+					if (optimal == statusSwap(X))
+						break;
+				}
 			}
 		}
 	}
 	//Minimizer
 	else {
-		optimal = 999999;
-		for (int i = 0; i < 9; i++) {
+		optimal = MAX_INFINITY;
+		for (int i = 0; i < 9 && doPrune(prune, alpha, beta); i++) {
 			if (board[i] == NONE)
 			{
 				board[i] = O;
-				value = minmax(board, X);
+				value = minmax_prune_opt(board, X, prune, alpha, beta);
 				if (value <= optimal)
 					optimal = value;
 				board[i] = NONE;
+
+				if (prune)
+				{
+					//Prune solution space
+					if (optimal < beta)
+						beta = optimal;
+					if (optimal == statusSwap(O))
+						break;
+				}
 			}
 		}
 	}
@@ -69,7 +103,7 @@ int minmax_tictactoe(int *board, int turn)
 	//it returns X(1) if X wins, O(2) if O wins or NONE(0) if tie or game is not finished
 	//the program will keep track of the number of boards evaluated
 	//int result = game_status(board);
-	return statusSwap(minmax(board, turn));
+	return statusSwap(minmax_prune_opt(board, turn, false, MIN_INFINITY, MAX_INFINITY));
 }
 
 int abprun_tictactoe(int *board, int turn)
@@ -80,5 +114,5 @@ int abprun_tictactoe(int *board, int turn)
 	//it returns X(1) if X wins, O(2) if O wins or NONE(0) if tie or game is not finished
 	//the program will keep track of the number of boards evaluated
 	//int result = game_status(board);
-	return NONE;
+	return statusSwap(minmax_prune_opt(board, turn, true, MIN_INFINITY, MAX_INFINITY));
 }
