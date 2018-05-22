@@ -34,12 +34,13 @@ bool backtrack(int **sudoku) {
 		for (int x = 0; x < 9; x++) {
 			if (sudoku[y][x] == 0)
 			{
-				//Update space
-				counter++;
 				for (int i = 1; i < 10; i++) {
+
+					//Update space
+					counter++;
 					//Check constraints
 					if (checkConstraints(sudoku, x, y, i)) {
-						
+
 						//Change value
 						sudoku[y][x] = i;
 						//recurse
@@ -57,39 +58,13 @@ bool backtrack(int **sudoku) {
 	}
 }
 
-bool forward(int **sudoku) {
-	for (int y = 0; y < 9; y++) {
-		for (int x = 0; x < 9; x++) {
-			if (sudoku[y][x] == 0)
-			{
-				for (int i = 1; i < 10; i++) {
-					if (checkConstraints(sudoku, x, y, i))
-					{
-						counter++;
-						sudoku[y][x] = i;
-
-						if (forward(sudoku))
-							return true;
-						
-						sudoku[y][x] = 0;
-					}
-				}
-				//Invalid solution, could not satisfy constraints with choice
-				return false;
-			}
-		}
-	}
-	//Board is complete
-	return true;
-}
-
 //Count the number of legal values left
 int values(int **sudoku, int x, int y) {
 	int count = 9;
 
 	for (int v = 1; v < 10; v++) {
-		if(!checkConstraints(sudoku, x, y, v))
-				count--;
+		if (!checkConstraints(sudoku, x, y, v))
+			count--;
 	}
 
 	return count;
@@ -108,32 +83,32 @@ int minimum(int **sudoku) {
 	return min;
 }
 
-///Similar to forward checking but with additional min value requirements
-bool mrv(int **sudoku) {
-	//Find the minimum value
+//Forward checking with mrv optional checks
+bool forward(int **sudoku, bool mrv) {
 	int min = minimum(sudoku);
+
 	for (int y = 0; y < 9; y++) {
 		for (int x = 0; x < 9; x++) {
-			//Check to see if the space is the min for this point
-			if (sudoku[y][x] == 0 && values(sudoku, x, y) == min)
+			if (sudoku[y][x] == 0 && (!mrv || (mrv && values(sudoku, x, y) == min)))
 			{
-				//Same as forward
 				for (int i = 1; i < 10; i++) {
 					if (checkConstraints(sudoku, x, y, i))
 					{
 						counter++;
 						sudoku[y][x] = i;
 
-						if (mrv(sudoku))
+						if (forward(sudoku, mrv))
 							return true;
 
 						sudoku[y][x] = 0;
 					}
 				}
+				//Invalid solution, could not satisfy constraints with choice
 				return false;
 			}
 		}
 	}
+	//Board is complete
 	return true;
 }
 
@@ -146,7 +121,7 @@ int sudoku_backtracking(int **sudoku)
 	// function must return the number of permutations performed
 	// the use of counter to keep track of the worlds 
 	// explored is optional but recommended 
-	counter=0;
+	counter = 0;
 	bool b = backtrack(sudoku);
 	return counter;
 }
@@ -160,8 +135,8 @@ int sudoku_forwardchecking(int **sudoku)
 	// function must return the number of permutations performed
 	// the use of counter to keep track of the worlds 
 	// explored is optional but recommended 
-	counter=0;
-	bool b = forward(sudoku);
+	counter = 0;
+	bool b = forward(sudoku, false);
 	return counter;
 }
 
@@ -174,8 +149,8 @@ int sudoku_mrv(int **sudoku)
 	// function must return the number of permutations performed
 	// the use of counter to keep track of the worlds 
 	// explored is optional but recommended 
-	counter=0;
-	bool b = mrv(sudoku);
+	counter = 0;
+	bool b = forward(sudoku, true);
 	return counter;
 }
 
